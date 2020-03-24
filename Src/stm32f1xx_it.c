@@ -36,10 +36,10 @@
 #include "stm32f1xx_it.h"
 
 /* USER CODE BEGIN 0 */
-#define ATCMD_PING			"AT?\r\n"
-#define ATCMD_SLEEP			"AT$SLEEP\r\n"
-#define ATCMD_PA0_EXTI0 "AT$SF=12,0\r\n"
-#define ATCMD_PA1_EXTI1 "AT$SF=34,0\r\n"
+extern const char* ATCMD_PING;
+extern const char* ATCMD_SLEEP;
+extern const char* ATCMD_PA0_EXTI0;
+extern const char* ATCMD_PA1_EXTI1;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -202,13 +202,13 @@ void EXTI0_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_IRQn 0 */
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-	printf(ATCMD_PING);
+	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
 	HAL_Delay(1000);
-	printf(ATCMD_PING);
+	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
 	HAL_Delay(3000);
-	printf(ATCMD_PA0_EXTI0);
+	printf("%s", ATCMD_PA0_EXTI0);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PA0_EXTI0, strlen(ATCMD_PA0_EXTI0), 0xFF);
 	HAL_Delay(10000);
-	printf(ATCMD_SLEEP);
+	printf("%s", ATCMD_SLEEP);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_SLEEP, strlen(ATCMD_SLEEP), 0xFF);
 	HAL_Delay(1000);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
@@ -225,14 +225,14 @@ void EXTI0_IRQHandler(void)
 void EXTI1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI1_IRQn 0 */
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);//turn on lED, showing
-	printf(ATCMD_PING);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
 	HAL_Delay(1000);
-	printf(ATCMD_PING);
+	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
 	HAL_Delay(3000);
-	printf(ATCMD_PA1_EXTI1);
+	printf("%s", ATCMD_PA1_EXTI1);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PA1_EXTI1, strlen(ATCMD_PA1_EXTI1), 0xFF);
 	HAL_Delay(10000);
-	printf(ATCMD_SLEEP);
+	printf("%s", ATCMD_SLEEP);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_SLEEP, strlen(ATCMD_SLEEP), 0xFF);
 	HAL_Delay(1000);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);

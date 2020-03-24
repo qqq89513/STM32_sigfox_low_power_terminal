@@ -42,16 +42,16 @@
 
 /* USER CODE BEGIN Includes */
 /**
-	@brief PA3:USART2_Rx
-				 PA2:USART2_Tx
-				 PA0:EXTI0, falling, internal pull-up
-				 PA1:EXTI1, falling, internal pull-up
+  @brief PA3:USART2_Rx
+         PA2:USART2_Tx
+         PA0:EXTI0, falling, internal pull-up
+         PA1:EXTI1, falling, internal pull-up
 */
 
-#define ATCMD_PING			"AT?\r\n"
-#define ATCMD_SLEEP			"AT$SLEEP\r\n"
-#define ATCMD_PA0_EXTI0 "AT$SF=12,0\r\n"
-#define ATCMD_PA1_EXTI1 "AT$SF=34,0\r\n"
+const char* ATCMD_PING     = "AT?\r\n";
+const char* ATCMD_SLEEP    = "AT$SLEEP\r\n";
+const char* ATCMD_PA0_EXTI0= "AT$SF=12,0\r\n";
+const char* ATCMD_PA1_EXTI1= "AT$SF=34,0\r\n";
 
 /* USER CODE END Includes */
 
@@ -125,18 +125,18 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   /* USER CODE END 2 */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1); //turn PC13 led off
-	HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, sizeof(ATCMD_PING), 0xFF);
-	HAL_Delay(500);
-	HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, sizeof(ATCMD_PING), 0xFF);
-	HAL_Delay(500);
+  printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
+  HAL_Delay(500);
+  printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
+  HAL_Delay(1000);
+	printf("%s", ATCMD_SLEEP);
   while (1)
   {
     HAL_Delay(300);
-		HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
+    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
