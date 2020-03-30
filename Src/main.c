@@ -127,20 +127,21 @@ int main(void)
   /* USER CODE END 2 */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1); //turn PC13 led off
-  printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
-  HAL_Delay(500);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0); //turn PC13 led on
+  HAL_Delay(4000);	//wait for sigfox module to boot up
+	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
+  HAL_Delay(1000);
   printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
   HAL_Delay(1000);
 	printf("%s", ATCMD_SLEEP);
+	HAL_Delay(1000);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1); //turn PC13 led off
+	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
   while (1)
   {
-    HAL_Delay(300);
-    HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-
   }
   /* USER CODE END 3 */
 
