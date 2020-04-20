@@ -211,11 +211,12 @@ void EXTI0_IRQHandler(void)
 	printf("%s", ATCMD_SLEEP);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_SLEEP, strlen(ATCMD_SLEEP), 0xFF);
 	HAL_Delay(1000);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
-	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
   /* USER CODE BEGIN EXTI0_IRQn 1 */
-
+  
+  //tell MCU go to sleep after HAL_GPIO_EXTI_IRQHandler() cleans interrupt request pending bit(EXTI->PR).
+  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI); //WFI:wait for interrupt
   /* USER CODE END EXTI0_IRQn 1 */
 }
 
@@ -235,11 +236,13 @@ void EXTI1_IRQHandler(void)
 	printf("%s", ATCMD_SLEEP);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_SLEEP, strlen(ATCMD_SLEEP), 0xFF);
 	HAL_Delay(1000);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
-	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
-
+  
+  //tell MCU go to sleep after HAL_GPIO_EXTI_IRQHandler() cleans interrupt request pending bit(EXTI->PR).
+  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI); //WFI:wait for interrupt
+  
   /* USER CODE END EXTI1_IRQn 1 */
 }
 
