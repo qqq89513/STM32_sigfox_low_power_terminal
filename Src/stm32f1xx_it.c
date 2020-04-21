@@ -36,103 +36,27 @@
 #include "stm32f1xx_it.h"
 
 /* USER CODE BEGIN 0 */
+RTC_TimeTypeDef rtc_time;
+extern int8_t get_PVD();
+
 extern const char* ATCMD_PING;
 extern const char* ATCMD_SLEEP;
+extern const char* ATCMD_BAT_OK;
+extern const char* ATCMD_BAT_LOW;
 extern const char* ATCMD_PA0_EXTI0;
 extern const char* ATCMD_PA1_EXTI1;
+extern const char* ATCMD_PA4_EXTI4;
+extern const char* ATCMD_PA5_EXTI5;
+extern const char* ATCMD_PA6_EXTI6;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern RTC_HandleTypeDef hrtc;
 extern UART_HandleTypeDef huart2;
 
 /******************************************************************************/
 /*            Cortex-M3 Processor Interruption and Exception Handlers         */ 
 /******************************************************************************/
-
-/**
-* @brief This function handles Non maskable interrupt.
-*/
-void NMI_Handler(void)
-{
-  /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
-
-  /* USER CODE END NonMaskableInt_IRQn 0 */
-  /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
-
-  /* USER CODE END NonMaskableInt_IRQn 1 */
-}
-
-/**
-* @brief This function handles Hard fault interrupt.
-*/
-void HardFault_Handler(void)
-{
-  /* USER CODE BEGIN HardFault_IRQn 0 */
-
-  /* USER CODE END HardFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-    /* USER CODE END W1_HardFault_IRQn 0 */
-  }
-  /* USER CODE BEGIN HardFault_IRQn 1 */
-
-  /* USER CODE END HardFault_IRQn 1 */
-}
-
-/**
-* @brief This function handles Memory management fault.
-*/
-void MemManage_Handler(void)
-{
-  /* USER CODE BEGIN MemoryManagement_IRQn 0 */
-
-  /* USER CODE END MemoryManagement_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-    /* USER CODE END W1_MemoryManagement_IRQn 0 */
-  }
-  /* USER CODE BEGIN MemoryManagement_IRQn 1 */
-
-  /* USER CODE END MemoryManagement_IRQn 1 */
-}
-
-/**
-* @brief This function handles Prefetch fault, memory access fault.
-*/
-void BusFault_Handler(void)
-{
-  /* USER CODE BEGIN BusFault_IRQn 0 */
-
-  /* USER CODE END BusFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-    /* USER CODE END W1_BusFault_IRQn 0 */
-  }
-  /* USER CODE BEGIN BusFault_IRQn 1 */
-
-  /* USER CODE END BusFault_IRQn 1 */
-}
-
-/**
-* @brief This function handles Undefined instruction or illegal state.
-*/
-void UsageFault_Handler(void)
-{
-  /* USER CODE BEGIN UsageFault_IRQn 0 */
-
-  /* USER CODE END UsageFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-    /* USER CODE END W1_UsageFault_IRQn 0 */
-  }
-  /* USER CODE BEGIN UsageFault_IRQn 1 */
-
-  /* USER CODE END UsageFault_IRQn 1 */
-}
 
 /**
 * @brief This function handles System service call via SWI instruction.
@@ -227,23 +151,70 @@ void EXTI1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI1_IRQn 0 */
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
+	printf("%s", ATCMD_PING);
 	HAL_Delay(1000);
-	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
+	printf("%s", ATCMD_PING);
 	HAL_Delay(3000);
-	printf("%s", ATCMD_PA1_EXTI1);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PA1_EXTI1, strlen(ATCMD_PA1_EXTI1), 0xFF);
+	printf("%s", ATCMD_PA1_EXTI1);
 	HAL_Delay(10000);
-	printf("%s", ATCMD_SLEEP);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_SLEEP, strlen(ATCMD_SLEEP), 0xFF);
+	printf("%s", ATCMD_SLEEP);
 	HAL_Delay(1000);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
-  
-  //tell MCU go to sleep after HAL_GPIO_EXTI_IRQHandler() cleans interrupt request pending bit(EXTI->PR).
-  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI); //WFI:wait for interrupt
-  
+  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);  
   /* USER CODE END EXTI1_IRQn 1 */
+}
+
+/**
+* @brief This function handles EXTI line4 interrupt.
+*/
+void EXTI4_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI4_IRQn 0 */
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+	printf("%s", ATCMD_PING);
+	HAL_Delay(1000);
+	printf("%s", ATCMD_PING);
+	HAL_Delay(3000);
+	printf("%s", ATCMD_PA4_EXTI4);
+	HAL_Delay(10000);
+	printf("%s", ATCMD_SLEEP);
+	HAL_Delay(1000);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+  /* USER CODE END EXTI4_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
+  /* USER CODE BEGIN EXTI4_IRQn 1 */
+  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+  /* USER CODE END EXTI4_IRQn 1 */
+}
+
+/**
+* @brief This function handles EXTI line[9:5] interrupts.
+*/
+void EXTI9_5_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+	printf("%s", ATCMD_PING);
+	HAL_Delay(1000);
+	printf("%s", ATCMD_PING);
+	HAL_Delay(3000);
+  if(EXTI->PR&(0x1U<<5))
+    printf("%s", ATCMD_PA5_EXTI5);
+  else if(EXTI->PR&(0x1U<<6))
+    printf("%s", ATCMD_PA6_EXTI6);
+  HAL_Delay(10000);
+	printf("%s", ATCMD_SLEEP);
+	HAL_Delay(1000);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+  /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
+  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+  /* USER CODE END EXTI9_5_IRQn 1 */
 }
 
 /**
@@ -258,6 +229,39 @@ void USART2_IRQHandler(void)
   /* USER CODE BEGIN USART2_IRQn 1 */
 
   /* USER CODE END USART2_IRQn 1 */
+}
+
+/**
+* @brief This function handles RTC alarm interrupt through EXTI line 17.
+*/
+void RTC_Alarm_IRQHandler(void)
+{
+  /* USER CODE BEGIN RTC_Alarm_IRQn 0 */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+  HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
+  printf("%s", ATCMD_PING);
+	HAL_Delay(1000);
+	printf("%s", ATCMD_PING);
+	HAL_Delay(3000);
+  printf("%s", get_PVD()==-1?ATCMD_BAT_OK:ATCMD_BAT_LOW);
+  HAL_Delay(10000);
+	printf("%s", ATCMD_SLEEP);
+	HAL_Delay(1000);
+  //printf("Alarm triggered at %02d:%02d:%02d\n", rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds);
+  RTC_AlarmTypeDef alarm;
+  alarm.AlarmTime=rtc_time;
+  alarm.AlarmTime.Hours+=1;
+  if(alarm.AlarmTime.Hours >= 24)
+    alarm.AlarmTime.Hours=alarm.AlarmTime.Hours-24;
+  
+  alarm.Alarm=1; //it can be only 1 for stm32f103c8
+  HAL_RTC_SetAlarm_IT(&hrtc, &alarm, RTC_FORMAT_BIN);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+  /* USER CODE END RTC_Alarm_IRQn 0 */
+  HAL_RTC_AlarmIRQHandler(&hrtc);
+  /* USER CODE BEGIN RTC_Alarm_IRQn 1 */
+  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);// alarm can wakes up MCU from stop mode
+  /* USER CODE END RTC_Alarm_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

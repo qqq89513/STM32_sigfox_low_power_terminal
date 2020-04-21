@@ -49,6 +49,11 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define low_avtive_led_Pin GPIO_PIN_13
+#define low_avtive_led_GPIO_Port GPIOC
+#define NRST_of_sigfox_Pin GPIO_PIN_11
+#define NRST_of_sigfox_GPIO_Port GPIOB
+
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the 
