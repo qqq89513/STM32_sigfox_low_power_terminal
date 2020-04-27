@@ -233,19 +233,21 @@ void USART2_IRQHandler(void)
 void RTC_Alarm_IRQHandler(void)
 {
   /* USER CODE BEGIN RTC_Alarm_IRQn 0 */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
   HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
   //printf("Alarm triggered at %02d:%02d:%02d\n", rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds);
-  RTC_AlarmTypeDef alarm;
+  RTC_AlarmTypeDef alarm; //this takes 1 second with 2MHz main clock.
   alarm.AlarmTime=rtc_time;
-//  alarm.AlarmTime.Hours+=1;
-//  if(alarm.AlarmTime.Hours >= 24)
-//    alarm.AlarmTime.Hours=alarm.AlarmTime.Hours-24;
-  alarm.AlarmTime.Minutes+=1;
+  //for minutes/hours alarm, second is neglectable,
+  alarm.AlarmTime.Seconds=0;//set to 0 for compensation
+  alarm.AlarmTime.Hours+=1;
+  if(alarm.AlarmTime.Hours >= 24)
+    alarm.AlarmTime.Hours=alarm.AlarmTime.Hours-24;
+  /*alarm.AlarmTime.Minutes+=1;
   if(alarm.AlarmTime.Minutes>=60){
     alarm.AlarmTime.Minutes=0;
     alarm.AlarmTime.Hours+=1;
-  }
+  }*/
   alarm.Alarm=1; //it can be only 1 for stm32f103c8
   HAL_RTC_SetAlarm_IT(&hrtc, &alarm, RTC_FORMAT_BIN);
   

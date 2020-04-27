@@ -145,14 +145,16 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
+  
+  //without this delay, uart may not work with VDD rising from 1.1V to 3.3V fast
+  HAL_Delay(1000);//connector bouncing when connecting causes unstable VDD
   tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
   tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
-	HAL_Delay(1000);
   alarm_set_init();
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
 	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
   while (1)
-  {    
+  {
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
@@ -189,7 +191,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV4;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
@@ -303,7 +305,7 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Channel6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 
 }
