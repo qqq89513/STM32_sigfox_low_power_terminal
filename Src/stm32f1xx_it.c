@@ -36,22 +36,24 @@
 #include "stm32f1xx_it.h"
 
 /* USER CODE BEGIN 0 */
-RTC_TimeTypeDef rtc_time;
-extern int8_t get_PVD();
+extern char* ATCMD_PING     ;
+extern char* ATCMD_SLEEP    ;
+extern char* ATCMD_BAT_OK   ;
+extern char* ATCMD_BAT_LOW  ;
+extern char* ATCMD_PA0_EXTI0;
+extern char* ATCMD_PA1_EXTI1;
+extern char* ATCMD_PA4_EXTI4;
+extern char* ATCMD_PA5_EXTI5;
+extern char* ATCMD_PA6_EXTI6;
 
-extern const char* ATCMD_PING;
-extern const char* ATCMD_SLEEP;
-extern const char* ATCMD_BAT_OK;
-extern const char* ATCMD_BAT_LOW;
-extern const char* ATCMD_PA0_EXTI0;
-extern const char* ATCMD_PA1_EXTI1;
-extern const char* ATCMD_PA4_EXTI4;
-extern const char* ATCMD_PA5_EXTI5;
-extern const char* ATCMD_PA6_EXTI6;
+RTC_TimeTypeDef rtc_time;
+extern int8_t get_PVD(void);
+extern int8_t tran_ATCMD(const char* cmd, uint16_t timeOut);
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
 extern RTC_HandleTypeDef hrtc;
+extern DMA_HandleTypeDef hdma_usart2_rx;
 extern UART_HandleTypeDef huart2;
 
 /******************************************************************************/
@@ -125,16 +127,11 @@ void SysTick_Handler(void)
 void EXTI0_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_IRQn 0 */
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
-	HAL_Delay(1000);
-	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
-	HAL_Delay(3000);
-	printf("%s", ATCMD_PA0_EXTI0);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PA0_EXTI0, strlen(ATCMD_PA0_EXTI0), 0xFF);
-	HAL_Delay(10000);
-	printf("%s", ATCMD_SLEEP);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_SLEEP, strlen(ATCMD_SLEEP), 0xFF);
-	HAL_Delay(1000);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
+	tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
+  tran_ATCMD(ATCMD_PA0_EXTI0, ATCMD_TO_TX);
+  tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
   /* USER CODE BEGIN EXTI0_IRQn 1 */
@@ -150,16 +147,11 @@ void EXTI0_IRQHandler(void)
 void EXTI1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI1_IRQn 0 */
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-	printf("%s", ATCMD_PING);
-	HAL_Delay(1000);
-	printf("%s", ATCMD_PING);
-	HAL_Delay(3000);
-	printf("%s", ATCMD_PA1_EXTI1);
-	HAL_Delay(10000);
-	printf("%s", ATCMD_SLEEP);
-	HAL_Delay(1000);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
+	tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
+  tran_ATCMD(ATCMD_PA1_EXTI1, ATCMD_TO_TX);
+  tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
@@ -173,16 +165,11 @@ void EXTI1_IRQHandler(void)
 void EXTI4_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI4_IRQn 0 */
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-	printf("%s", ATCMD_PING);
-	HAL_Delay(1000);
-	printf("%s", ATCMD_PING);
-	HAL_Delay(3000);
-	printf("%s", ATCMD_PA4_EXTI4);
-	HAL_Delay(10000);
-	printf("%s", ATCMD_SLEEP);
-	HAL_Delay(1000);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
+	tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
+  tran_ATCMD(ATCMD_PA4_EXTI4, ATCMD_TO_TX);
+  tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
   /* USER CODE END EXTI4_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
   /* USER CODE BEGIN EXTI4_IRQn 1 */
@@ -191,24 +178,33 @@ void EXTI4_IRQHandler(void)
 }
 
 /**
+* @brief This function handles DMA1 channel6 global interrupt.
+*/
+void DMA1_Channel6_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel6_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel6_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+  /* USER CODE BEGIN DMA1_Channel6_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel6_IRQn 1 */
+}
+
+/**
 * @brief This function handles EXTI line[9:5] interrupts.
 */
 void EXTI9_5_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-	printf("%s", ATCMD_PING);
-	HAL_Delay(1000);
-	printf("%s", ATCMD_PING);
-	HAL_Delay(3000);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
+	tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
   if(EXTI->PR&(0x1U<<5))
-    printf("%s", ATCMD_PA5_EXTI5);
+    tran_ATCMD(ATCMD_PA5_EXTI5, ATCMD_TO_TX);
   else if(EXTI->PR&(0x1U<<6))
-    printf("%s", ATCMD_PA6_EXTI6);
-  HAL_Delay(10000);
-	printf("%s", ATCMD_SLEEP);
-	HAL_Delay(1000);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+    tran_ATCMD(ATCMD_PA6_EXTI6, ATCMD_TO_TX);
+  tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
   /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
@@ -237,26 +233,26 @@ void USART2_IRQHandler(void)
 void RTC_Alarm_IRQHandler(void)
 {
   /* USER CODE BEGIN RTC_Alarm_IRQn 0 */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
   HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
-  printf("%s", ATCMD_PING);
-	HAL_Delay(1000);
-	printf("%s", ATCMD_PING);
-	HAL_Delay(3000);
-  printf("%s", get_PVD()==-1?ATCMD_BAT_OK:ATCMD_BAT_LOW);
-  HAL_Delay(10000);
-	printf("%s", ATCMD_SLEEP);
-	HAL_Delay(1000);
   //printf("Alarm triggered at %02d:%02d:%02d\n", rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds);
   RTC_AlarmTypeDef alarm;
   alarm.AlarmTime=rtc_time;
-  alarm.AlarmTime.Hours+=1;
-  if(alarm.AlarmTime.Hours >= 24)
-    alarm.AlarmTime.Hours=alarm.AlarmTime.Hours-24;
-  
+//  alarm.AlarmTime.Hours+=1;
+//  if(alarm.AlarmTime.Hours >= 24)
+//    alarm.AlarmTime.Hours=alarm.AlarmTime.Hours-24;
+  alarm.AlarmTime.Minutes+=1;
+  if(alarm.AlarmTime.Minutes>=60){
+    alarm.AlarmTime.Minutes=0;
+    alarm.AlarmTime.Hours+=1;
+  }
   alarm.Alarm=1; //it can be only 1 for stm32f103c8
   HAL_RTC_SetAlarm_IT(&hrtc, &alarm, RTC_FORMAT_BIN);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+  
+  tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
+  tran_ATCMD(get_PVD()==-1?ATCMD_BAT_OK:ATCMD_BAT_LOW, ATCMD_TO_TX);
+  tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
   /* USER CODE END RTC_Alarm_IRQn 0 */
   HAL_RTC_AlarmIRQHandler(&hrtc);
   /* USER CODE BEGIN RTC_Alarm_IRQn 1 */

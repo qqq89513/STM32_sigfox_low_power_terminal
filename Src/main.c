@@ -46,23 +46,19 @@
          PA2:USART2_Tx
          PA0:EXTI0, falling, internal pull-up
          PA1:EXTI1, falling, internal pull-up
+         
+         If internal 40kHz is used for RTC,
+         then hrtc.Init.AsynchPrediv should be callibrated instead of RTC_AUTO_1_SECOND
+         because internal RC 40kHz is not accurate.
 */
-
-const char* ATCMD_PING      = "AT?\r\n";
-const char* ATCMD_SLEEP     = "AT$SLEEP\r\n";
-const char* ATCMD_BAT_OK    = "AT$SF=50,0\r\n";
-const char* ATCMD_BAT_LOW   = "AT$SF=51,0\r\n";
-const char* ATCMD_PA0_EXTI0 = "AT$SF=00,0\r\n";
-const char* ATCMD_PA1_EXTI1 = "AT$SF=01,0\r\n";
-const char* ATCMD_PA4_EXTI4 = "AT$SF=04,0\r\n";
-const char* ATCMD_PA5_EXTI5 = "AT$SF=05,0\r\n";
-const char* ATCMD_PA6_EXTI6 = "AT$SF=06,0\r\n";
+#define SKIP_OK 0 //if==1, then not waiting for OK response.
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
 RTC_HandleTypeDef hrtc;
 
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -88,17 +84,27 @@ PUTCHAR_PROTOTYPE{
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_RTC_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-void alarm_set_init();
-int8_t get_PVD();
+void alarm_set_init(void);
+int8_t tran_ATCMD(const char* CMD, uint16_t timeout);
+int8_t get_PVD(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-
+char* ATCMD_PING      = ATCMD_PING_LIT     ;
+char* ATCMD_SLEEP     = ATCMD_SLEEP_LIT    ;
+char* ATCMD_BAT_OK    = ATCMD_BAT_OK_LIT   ;
+char* ATCMD_BAT_LOW   = ATCMD_BAT_LOW_LIT  ;
+char* ATCMD_PA0_EXTI0 = ATCMD_PA0_EXTI0_LIT;
+char* ATCMD_PA1_EXTI1 = ATCMD_PA1_EXTI1_LIT;
+char* ATCMD_PA4_EXTI4 = ATCMD_PA4_EXTI4_LIT;
+char* ATCMD_PA5_EXTI5 = ATCMD_PA5_EXTI5_LIT;  //_LIT stands for literal.
+char* ATCMD_PA6_EXTI6 = ATCMD_PA6_EXTI6_LIT;  //ATCMD_XXX_LIT defined in main.h
 /* USER CODE END 0 */
 
 /**
@@ -130,6 +136,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
@@ -137,20 +144,12 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0); //turn PC13 led on
-    HAL_Delay(3000);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, 0); //reset sigfox module
-  HAL_Delay(300);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, 1); //reset sigfox module
-  HAL_Delay(3000);	//wait for sigfox module to boot up
-	printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
-  HAL_Delay(1000);
-  printf("%s", ATCMD_PING);//HAL_UART_Transmit(&huart2, (uint8_t*)ATCMD_PING, strlen(ATCMD_PING), 0xFF);
-  HAL_Delay(1000);
-	printf("%s", ATCMD_SLEEP);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
+  tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
+  tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
 	HAL_Delay(1000);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1); //turn PC13 led off
   alarm_set_init();
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
 	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
   while (1)
   {    
@@ -190,7 +189,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV4;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
@@ -294,6 +293,21 @@ static void MX_USART2_UART_Init(void)
 
 }
 
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+
+}
+
 /** Configure pins as 
         * Analog 
         * Input 
@@ -315,10 +329,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(low_avtive_led_GPIO_Port, low_avtive_led_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(low_avtive_led_GPIO_Port, low_avtive_led_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(NRST_of_sigfox_GPIO_Port, NRST_of_sigfox_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(NRST_of_sigfox_GPIO_Port, NRST_of_sigfox_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : low_avtive_led_Pin */
   GPIO_InitStruct.Pin = low_avtive_led_Pin;
@@ -415,6 +429,62 @@ int8_t get_PVD(){
         return lv;
   }
   return -1;  //return -1 if VDD is higher then threshold level 7.
+}
+
+/**
+  * @brief  Transimit AT command and poll for OK response before timeout.
+  * @param  cmd: the AT command to transmit.
+  * @param  timeOut: duration polling for OK response, in millisecond.
+  * @retval return 0 if OK response detected.
+  *         return -1 if no OK response detected.
+  * @notes  If timeout then reset sigfox module.
+  */
+int8_t tran_ATCMD(const char* cmd, uint16_t timeOut){
+#if SKIP_OK
+  printf("Hi\r\n");
+  HAL_Delay(100);
+  printf("%s", cmd);
+  return 0;
+#else
+  uint8_t text[30]={'\0'}; //buffer for storing AT response.
+  uint32_t preTick;
+  if(cmd == ATCMD_PING){ //if trying to wake up sigfox
+    printf("a");  //sigfox module wakes up on any of its RX data.
+    HAL_Delay(300);
+    printf("Hi\r\n");
+    HAL_Delay(200);
+  }
+  do{ //clear receiving buffer
+    text[0]='\0';
+    HAL_UART_Receive(&huart2, &(text[0]), 1, 0xF); //receive 1 byte from hardware buffer.
+  }while(text[0]!='\0');
+  HAL_UART_DMAStop(&huart2);
+  HAL_UART_Receive_DMA(&huart2, text, 30);
+  printf("%s", cmd);
+  HAL_Delay(50);
+  uint8_t i=0;
+  int8_t isOK=-1;
+  preTick=HAL_GetTick();
+  while(HAL_GetTick()-preTick < timeOut && isOK==-1){ //break either timeout or OK detected
+    i=0;
+    while(text[i]!='\0' && i<29){ //check for response OK.
+      if(text[i]=='O' && text[i+1]=='K'){
+        isOK=1;
+        break;
+      }
+      i++;
+      HAL_Delay(10);
+    }
+  }
+  HAL_UART_DMAStop(&huart2);
+  if(isOK==-1){ //if not responding, then reset sigfox module.
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, RF_NRST_ON);
+    HAL_Delay(200);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, RF_NRST_OFF);
+    HAL_Delay(3000);
+  }
+  return isOK; //return 0 if success
+#endif
 }
 /* USER CODE END 4 */
 
