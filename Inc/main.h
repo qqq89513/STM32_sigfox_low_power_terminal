@@ -53,9 +53,9 @@
 #define ATCMD_BAT_LOW_LIT   "AT$SF=51,0\r\n"
 #define ATCMD_PA0_EXTI0_LIT "AT$SF=00,0\r\n"
 #define ATCMD_PA1_EXTI1_LIT "AT$SF=01,0\r\n"
-#define ATCMD_PA4_EXTI4_LIT "AT$SF=04,0\r\n"
-#define ATCMD_PA5_EXTI5_LIT "AT$SF=05,0\r\n"
-#define ATCMD_PA6_EXTI6_LIT "AT$SF=06,0\r\n"
+#define ATCMD_PA4_EXTI4_LIT "AT$SF=02,0\r\n"
+#define ATCMD_PA5_EXTI5_LIT "AT$SF=03,0\r\n"
+#define ATCMD_PA6_EXTI6_LIT "AT$SF=04,0\r\n"
 
 
 #define LED_ON      GPIO_PIN_RESET
