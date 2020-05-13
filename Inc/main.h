@@ -51,12 +51,11 @@
 #define ATCMD_SLEEP_LIT     "AT$SLEEP\r\n"
 #define ATCMD_BAT_OK_LIT    "AT$SF=50,0\r\n"
 #define ATCMD_BAT_LOW_LIT   "AT$SF=51,0\r\n"
-#define ATCMD_PA0_EXTI0_LIT "AT$SF=00,0\r\n"
-#define ATCMD_PA1_EXTI1_LIT "AT$SF=01,0\r\n"
-#define ATCMD_PA4_EXTI4_LIT "AT$SF=02,0\r\n"
-#define ATCMD_PA5_EXTI5_LIT "AT$SF=03,0\r\n"
-#define ATCMD_PA6_EXTI6_LIT "AT$SF=04,0\r\n"
-
+#define ATCMD_PA1_EXTI1_LIT "AT$SF=00,0\r\n"
+#define ATCMD_PA4_EXTI4_LIT "AT$SF=01,0\r\n"
+#define ATCMD_PA5_EXTI5_LIT "AT$SF=02,0\r\n"
+#define ATCMD_PA6_EXTI6_LIT "AT$SF=03,0\r\n"
+#define ATCMD_PA7_EXTI7_LIT "AT$SF=04,0\r\n"
 
 #define LED_ON      GPIO_PIN_RESET
 #define LED_OFF     GPIO_PIN_SET
@@ -68,8 +67,8 @@
 
 #define low_avtive_led_Pin GPIO_PIN_13
 #define low_avtive_led_GPIO_Port GPIOC
-#define NRST_of_sigfox_Pin GPIO_PIN_11
-#define NRST_of_sigfox_GPIO_Port GPIOB
+#define SIGFOX_NRST_Pin GPIO_PIN_0
+#define SIGFOX_NRST_GPIO_Port GPIOA
 
 /* ########################## Assert Selection ############################## */
 /**

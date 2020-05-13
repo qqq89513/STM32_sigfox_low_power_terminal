@@ -40,11 +40,11 @@ extern char* ATCMD_PING     ;
 extern char* ATCMD_SLEEP    ;
 extern char* ATCMD_BAT_OK   ;
 extern char* ATCMD_BAT_LOW  ;
-extern char* ATCMD_PA0_EXTI0;
 extern char* ATCMD_PA1_EXTI1;
 extern char* ATCMD_PA4_EXTI4;
 extern char* ATCMD_PA5_EXTI5;
 extern char* ATCMD_PA6_EXTI6;
+extern char* ATCMD_PA7_EXTI7;
 
 RTC_TimeTypeDef rtc_time;
 extern int8_t get_PVD(void);
@@ -71,19 +71,6 @@ void SVC_Handler(void)
   /* USER CODE BEGIN SVCall_IRQn 1 */
 
   /* USER CODE END SVCall_IRQn 1 */
-}
-
-/**
-* @brief This function handles Debug monitor.
-*/
-void DebugMon_Handler(void)
-{
-  /* USER CODE BEGIN DebugMonitor_IRQn 0 */
-
-  /* USER CODE END DebugMonitor_IRQn 0 */
-  /* USER CODE BEGIN DebugMonitor_IRQn 1 */
-
-  /* USER CODE END DebugMonitor_IRQn 1 */
 }
 
 /**
@@ -122,36 +109,16 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-* @brief This function handles EXTI line0 interrupt.
-*/
-void EXTI0_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI0_IRQn 0 */
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
-	tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
-  tran_ATCMD(ATCMD_PA0_EXTI0, ATCMD_TO_TX);
-  tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
-  /* USER CODE END EXTI0_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
-  /* USER CODE BEGIN EXTI0_IRQn 1 */
-  
-  //tell MCU go to sleep after HAL_GPIO_EXTI_IRQHandler() cleans interrupt request pending bit(EXTI->PR).
-  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI); //WFI:wait for interrupt
-  /* USER CODE END EXTI0_IRQn 1 */
-}
-
-/**
 * @brief This function handles EXTI line1 interrupt.
 */
 void EXTI1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI1_IRQn 0 */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
-	tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
+  tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
   tran_ATCMD(ATCMD_PA1_EXTI1, ATCMD_TO_TX);
   tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
   /* USER CODE END EXTI1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
   /* USER CODE BEGIN EXTI1_IRQn 1 */
@@ -165,11 +132,11 @@ void EXTI1_IRQHandler(void)
 void EXTI4_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI4_IRQn 0 */
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
-	tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
+  tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
   tran_ATCMD(ATCMD_PA4_EXTI4, ATCMD_TO_TX);
   tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
   /* USER CODE END EXTI4_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
   /* USER CODE BEGIN EXTI4_IRQn 1 */
@@ -197,17 +164,20 @@ void DMA1_Channel6_IRQHandler(void)
 void EXTI9_5_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
-	tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
+  tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);
   if(EXTI->PR&(0x1U<<5))
     tran_ATCMD(ATCMD_PA5_EXTI5, ATCMD_TO_TX);
   else if(EXTI->PR&(0x1U<<6))
     tran_ATCMD(ATCMD_PA6_EXTI6, ATCMD_TO_TX);
-  tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
+  else if(EXTI->PR&(0x1U<<7))
+    tran_ATCMD(ATCMD_PA7_EXTI7, ATCMD_TO_TX);
+  tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);  //tran_ATCMD("AT$CMD\r\n", timeout);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
   /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
   HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
   /* USER CODE END EXTI9_5_IRQn 1 */

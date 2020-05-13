@@ -44,8 +44,12 @@
 /**
   @brief PA3:USART2_Rx
          PA2:USART2_Tx
-         PA0:EXTI0, falling, internal pull-up
+         PA0:SIGFOX_NRST, output
          PA1:EXTI1, falling, internal pull-up
+         PA4:EXTI4, falling, internal pull-up
+         PA5:EXTI5, falling, internal pull-up
+         PA6:EXTI6, falling, internal pull-up
+         PA7:EXTI7, falling, internal pull-up
          
          If internal 40kHz is used for RTC,
          then hrtc.Init.AsynchPrediv should be callibrated instead of RTC_AUTO_1_SECOND
@@ -55,6 +59,8 @@
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
+
 RTC_HandleTypeDef hrtc;
 
 UART_HandleTypeDef huart2;
@@ -87,6 +93,7 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_RTC_Init(void);
+static void MX_I2C1_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -100,11 +107,11 @@ char* ATCMD_PING      = ATCMD_PING_LIT     ;
 char* ATCMD_SLEEP     = ATCMD_SLEEP_LIT    ;
 char* ATCMD_BAT_OK    = ATCMD_BAT_OK_LIT   ;
 char* ATCMD_BAT_LOW   = ATCMD_BAT_LOW_LIT  ;
-char* ATCMD_PA0_EXTI0 = ATCMD_PA0_EXTI0_LIT;
 char* ATCMD_PA1_EXTI1 = ATCMD_PA1_EXTI1_LIT;
 char* ATCMD_PA4_EXTI4 = ATCMD_PA4_EXTI4_LIT;
-char* ATCMD_PA5_EXTI5 = ATCMD_PA5_EXTI5_LIT;  //_LIT stands for literal.
-char* ATCMD_PA6_EXTI6 = ATCMD_PA6_EXTI6_LIT;  //ATCMD_XXX_LIT defined in main.h
+char* ATCMD_PA5_EXTI5 = ATCMD_PA5_EXTI5_LIT;
+char* ATCMD_PA6_EXTI6 = ATCMD_PA6_EXTI6_LIT;  //_LIT stands for literal.
+char* ATCMD_PA7_EXTI7 = ATCMD_PA7_EXTI7_LIT;  //ATCMD_XXX_LIT defined in main.h
 /* USER CODE END 0 */
 
 /**
@@ -139,6 +146,7 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_RTC_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   /* USER CODE END 2 */
 
@@ -152,7 +160,7 @@ int main(void)
   tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
   alarm_set_init();
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
-	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
+  HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);//WFI:wait for interrupt
   while (1)
   {
   /* USER CODE END WHILE */
@@ -217,6 +225,26 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+}
+
+/* I2C1 init function */
+static void MX_I2C1_Init(void)
+{
+
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
 }
 
 /* RTC init function */
@@ -334,7 +362,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(low_avtive_led_GPIO_Port, low_avtive_led_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(NRST_of_sigfox_GPIO_Port, NRST_of_sigfox_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(SIGFOX_NRST_GPIO_Port, SIGFOX_NRST_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : low_avtive_led_Pin */
   GPIO_InitStruct.Pin = low_avtive_led_Pin;
@@ -353,46 +381,43 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA0 PA1 PA4 PA5 
-                           PA6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_5 
-                          |GPIO_PIN_6;
+  /*Configure GPIO pin : SIGFOX_NRST_Pin */
+  GPIO_InitStruct.Pin = SIGFOX_NRST_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SIGFOX_NRST_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA1 PA4 PA5 PA6 
+                           PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6 
+                          |GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA7 PA8 PA9 PA10 
-                           PA11 PA12 PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10 
-                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
   /*Configure GPIO pins : PB0 PB1 PB2 PB10 
-                           PB12 PB13 PB14 PB15 
-                           PB3 PB4 PB5 PB6 
-                           PB7 PB8 PB9 */
+                           PB11 PB12 PB13 PB14 
+                           PB15 PB3 PB4 PB5 
+                           PB8 PB9 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10 
-                          |GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15 
-                          |GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6 
-                          |GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
+                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14 
+                          |GPIO_PIN_15|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5 
+                          |GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : NRST_of_sigfox_Pin */
-  GPIO_InitStruct.Pin = NRST_of_sigfox_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(NRST_of_sigfox_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pins : PA8 PA9 PA10 PA11 
+                           PA12 PA15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11 
+                          |GPIO_PIN_12|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure peripheral I/O remapping */
   __HAL_AFIO_REMAP_PD01_ENABLE();
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 2, 0);
-  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-
   HAL_NVIC_SetPriority(EXTI1_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
@@ -480,9 +505,9 @@ int8_t tran_ATCMD(const char* cmd, uint16_t timeOut){
   }
   HAL_UART_DMAStop(&huart2);
   if(isOK==-1){ //if not responding, then reset sigfox module.
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, RF_NRST_ON);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, RF_NRST_ON);
     HAL_Delay(200);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, RF_NRST_OFF);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, RF_NRST_OFF);
     HAL_Delay(3000);
   }
   return isOK; //return 0 if success
