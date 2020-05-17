@@ -218,7 +218,7 @@ void RTC_Alarm_IRQHandler(void)
     alarm.AlarmTime.Minutes=0;
     alarm.AlarmTime.Hours+=1;
   }*/
-  alarm.Alarm=1; //it can be only 1 for stm32f103c8
+  alarm.Alarm=RTC_ALARM_A; //only 1 alarm available for stm32f103c8
   HAL_RTC_SetAlarm_IT(&hrtc, &alarm, RTC_FORMAT_BIN);
   
   tran_ATCMD(ATCMD_PING, ATCMD_TO_GEN);

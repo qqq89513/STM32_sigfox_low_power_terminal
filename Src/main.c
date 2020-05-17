@@ -435,7 +435,7 @@ void alarm_set_init(){
   alarm.AlarmTime.Hours=0;
   alarm.AlarmTime.Minutes=1;
   alarm.AlarmTime.Seconds=0;
-  alarm.Alarm=1; //this can be only 1 for stm32f103c8
+  alarm.Alarm=RTC_ALARM_A; //only 1 alarm available for stm32f103c8
   HAL_RTC_SetAlarm_IT(&hrtc, &alarm, RTC_FORMAT_BIN);
 }
 
