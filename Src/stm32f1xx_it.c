@@ -46,7 +46,6 @@ extern char* ATCMD_PA5_EXTI5;
 extern char* ATCMD_PA6_EXTI6;
 extern char* ATCMD_PA7_EXTI7;
 
-RTC_TimeTypeDef rtc_time;
 extern int8_t get_PVD(void);
 extern int8_t tran_ATCMD(const char* cmd, uint16_t timeOut);
 /* USER CODE END 0 */
@@ -59,32 +58,6 @@ extern UART_HandleTypeDef huart2;
 /******************************************************************************/
 /*            Cortex-M3 Processor Interruption and Exception Handlers         */ 
 /******************************************************************************/
-
-/**
-* @brief This function handles System service call via SWI instruction.
-*/
-void SVC_Handler(void)
-{
-  /* USER CODE BEGIN SVCall_IRQn 0 */
-
-  /* USER CODE END SVCall_IRQn 0 */
-  /* USER CODE BEGIN SVCall_IRQn 1 */
-
-  /* USER CODE END SVCall_IRQn 1 */
-}
-
-/**
-* @brief This function handles Pendable request for system service.
-*/
-void PendSV_Handler(void)
-{
-  /* USER CODE BEGIN PendSV_IRQn 0 */
-
-  /* USER CODE END PendSV_IRQn 0 */
-  /* USER CODE BEGIN PendSV_IRQn 1 */
-
-  /* USER CODE END PendSV_IRQn 1 */
-}
 
 /**
 * @brief This function handles System tick timer.
@@ -203,13 +176,13 @@ void USART2_IRQHandler(void)
 void RTC_Alarm_IRQHandler(void)
 {
   /* USER CODE BEGIN RTC_Alarm_IRQn 0 */
-  HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_ON);
-  //printf("Alarm triggered at %02d:%02d:%02d\n", rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds);
-  RTC_AlarmTypeDef alarm; //this takes 1 second with 2MHz main clock.
-  alarm.AlarmTime=rtc_time;
-  //for minutes/hours alarm, second is neglectable,
-  alarm.AlarmTime.Seconds=0;//set to 0 for compensation
+  /* USER CODE END RTC_Alarm_IRQn 0 */
+  HAL_RTC_AlarmIRQHandler(&hrtc);
+  /* USER CODE BEGIN RTC_Alarm_IRQn 1 */
+  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+  RTC_AlarmTypeDef alarm;
+  HAL_RTC_GetAlarm(&hrtc, &alarm, RTC_ALARM_A, RTC_FORMAT_BIN);
+  //printf("Alarm triggered at %02d:%02d:%02d\n", alarm.AlarmTime.Hours, alarm.AlarmTime.Minutes, alarm.AlarmTime.Seconds);
   alarm.AlarmTime.Hours+=1;
   if(alarm.AlarmTime.Hours >= 24)
     alarm.AlarmTime.Hours=alarm.AlarmTime.Hours-24;
@@ -225,9 +198,6 @@ void RTC_Alarm_IRQHandler(void)
   tran_ATCMD(get_PVD()==-1?ATCMD_BAT_OK:ATCMD_BAT_LOW, ATCMD_TO_TX);
   tran_ATCMD(ATCMD_SLEEP, ATCMD_TO_GEN);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, LED_OFF);
-  /* USER CODE END RTC_Alarm_IRQn 0 */
-  HAL_RTC_AlarmIRQHandler(&hrtc);
-  /* USER CODE BEGIN RTC_Alarm_IRQn 1 */
   HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);// alarm can wakes up MCU from stop mode
   /* USER CODE END RTC_Alarm_IRQn 1 */
 }
